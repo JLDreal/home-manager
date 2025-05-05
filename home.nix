@@ -13,7 +13,6 @@ in
   home.stateVersion = "25.05";
   programs.home-manager.enable = true;
 
-
   # ========== Package List ==========
   home.packages = with pkgs; [
     unstablePkgs.jujutsu
@@ -61,45 +60,42 @@ in
 
   # ========== SSH Agent ==========
   programs.ssh = {
-      enable = true;
-      extraConfig = ''
-        AddKeysToAgent yes
-        IdentityAgent ${config.home.homeDirectory}/.ssh/agent.sock
-      '';
-
-    };
-
-    # Systemd service with correct syntax
-      systemd.user.services.ssh-agent = {
-        enable = true;
-        Unit = {
-          Description = "SSH Authentication Agent";
-          Documentation = "man:ssh-agent(1)";
-        };
-        Service = {
-          Type = "simple";
-          ExecStart = ''${pkgs.openssh}/bin/ssh-agent -D -a ${config.home.homeDirectory}/.ssh/agent.sock '';
-          Restart = "on-failure";
-        };
-        Install = {
-          WantedBy = [ "default.target" ];
-        };
-      };
-
-      # Environment variables
-      home.sessionVariables = {
-        SSH_AUTH_SOCK = "${config.home.homeDirectory}/.ssh/agent.sock";
-      };
-
-      # Create directory and ensure proper permissions
-      home.activation.setupSshAgent = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        mkdir -p ${config.home.homeDirectory}/.ssh
-        chmod 700 ${config.home.homeDirectory}/.ssh
-      '';
-
-# Ollama configuration
-  systemd.user.services.ollama = {
     enable = true;
+    extraConfig = ''
+      AddKeysToAgent yes
+      IdentityAgent ${config.home.homeDirectory}/.ssh/agent.sock
+    '';
+  };
+
+  # Systemd service with correct syntax
+  systemd.user.services.ssh-agent = {
+    Unit = {
+      Description = "SSH Authentication Agent";
+      Documentation = "man:ssh-agent(1)";
+    };
+    Service = {
+      Type = "simple";
+      ExecStart = ''${pkgs.openssh}/bin/ssh-agent -D -a ${config.home.homeDirectory}/.ssh/agent.sock '';
+      Restart = "on-failure";
+    };
+    Install = {
+      WantedBy = [ "default.target" ];
+    };
+  };
+
+  # Environment variables
+  home.sessionVariables = {
+    SSH_AUTH_SOCK = "${config.home.homeDirectory}/.ssh/agent.sock";
+  };
+
+  # Create directory and ensure proper permissions
+  home.activation.setupSshAgent = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    mkdir -p ${config.home.homeDirectory}/.ssh
+    chmod 700 ${config.home.homeDirectory}/.ssh
+  '';
+
+  # Ollama configuration
+  systemd.user.services.ollama = {
     Unit = {
       Description = "Ollama AI service";
       After = "network.target";
@@ -115,16 +111,14 @@ in
 
   home.activation.ollamaPull = lib.hm.dag.entryAfter ["writeBoundary"] ''
     ${pkgs.ollama}/bin/ollama serve &
-    echo "Checking for Ollama model '"${rustModel.name}"'..."
-    if ! ${pkgs.ollama}/bin/ollama list | ${pkgs.gnugrep}/bin/grep -q "${rustModel.name}" ; then
-      echo "Pulling '"${rustModel.name}"' model (this may take several minutes)..."
-      ${pkgs.ollama}/bin/ollama pull "${rustModel.name}"
+    echo "Checking for Ollama model '${rustModel.name}'..."
+    if ! ${pkgs.ollama}/bin/ollama list | ${pkgs.gnugrep}/bin/grep -q '${rustModel.name}'; then
+      echo "Pulling '${rustModel.name}' model (this may take several minutes)..."
+      ${pkgs.ollama}/bin/ollama pull '${rustModel.name}'
     else
-      echo "Model '"${rustModel.name}"' already exists"
+      echo "Model '${rustModel.name}' already exists"
     fi
   '';
-
-
 
   # ========== Zed Editor ==========
   programs.zed-editor = {
@@ -132,92 +126,129 @@ in
     extensions = ["nix" "toml" "elixir" "make" "sql"];
 
     userSettings = {
-      assistant = {
-        enabled = true;
-        version = "2";
-        default_open_ai_model = null;
-        default_model = {
-          provider = rustModel.provider;
-          model = rustModel.name;
-        };
-      };
+    # AI/Completion Parameters
+    parameters = {
+      max_tokens = 800;           # Reduced from 1000 for safety
+      temperature = 0.3;          # Lower for more deterministic code
+      top_p = 0.9;                # Better than temperature alone
+      frequency_penalty = 0.2;     # Discourages repetition
+      stop = ["\n\n" "'''" "```" "###"]; # Common stop sequences
 
-      node = {
-        path = lib.getExe pkgs.nodejs;
-        npm_path = lib.getExe' pkgs.nodejs "npm";
-      };
+      # Response Template
+      template = ''
+        [INST]
+        Generate ONLY the requested code with standard comments.
+        Use this format:
 
-      hour_format = "hour24";
-      auto_update = false;
-      terminal = {
-        alternate_scroll = "off";
-        blinking = "off";
-        copy_on_select = false;
-        dock = "bottom";
-        detect_venv = {
-          on = {
-            directories = [".env" "env" ".venv" "venv"];
-            activate_script = "default";
-          };
-        };
-        env = { TERM = "alacritty"; };
-        font_family = "FiraCode Nerd Font";
-        font_features = null;
-        font_size = null;
-        line_height = "comfortable";
-        option_as_meta = false;
-        button = false;
-        shell = "system";
-        toolbar = { title = true; };
-        working_directory = "current_project_directory";
-      };
+        #[Comment]
+        [Code]
 
-      lsp = {
-        rust-analyzer = {
-          binary = {
-            path = lib.getExe pkgs.rust-analyzer;
-            path_lookup = true;
-          };
-        };
-        nix = { binary = { path_lookup = true; }; };
-        elixir-ls = {
-          binary = { path_lookup = true; };
-          settings = { dialyzerEnabled = true; };
-        };
-      };
-
-      languages = {
-        "Elixir" = {
-          language_servers = ["!lexical" "elixir-ls" "!next-ls"];
-          format_on_save = {
-            external = {
-              command = "mix";
-              arguments = ["format" "--stdin-filename" "{buffer_path}" "-"];
-            };
-          };
-        };
-        "HEEX" = {
-          language_servers = ["!lexical" "elixir-ls" "!next-ls"];
-          format_on_save = {
-            external = {
-              command = "mix";
-              arguments = ["format" "--stdin-filename" "{buffer_path}" "-"];
-            };
-          };
-        };
-      };
-
-      vim_mode = false;
-      load_direnv = "shell_hook";
-      base_keymap = "VSCode";
-      theme = {
-        mode = "dark";
-        light = "One Light";
-        dark = "One Dark";
-      };
-      show_whitespaces = "all";
-      ui_font_size = 16;
-      buffer_font_size = 16;
+        Prohibited:
+        - Explanations
+        - Examples
+        - Markdown formatting
+        [/INST]
+      '';
     };
+
+    # Inline Suggestions (Ghost Text)
+    inline = {
+      enabled = false;            # Disable if you prefer panel-only
+      delay_ms = 500;
+      max_lines = 2;
+    };
+
+    # Node.js Configuration
+    node = {
+      path = lib.getExe pkgs.nodejs;
+      npm_path = lib.getExe' pkgs.nodejs "npm";
+    };
+
+    # General Settings
+    hour_format = "hour24";
+    auto_update = false;
+    vim_mode = false;
+    load_direnv = "shell_hook";
+    base_keymap = "VSCode";
+
+    # Terminal Configuration
+    terminal = {
+      alternate_scroll = "off";
+      blinking = "off";
+      copy_on_select = false;
+      dock = "bottom";
+
+      detect_venv = {
+        on = {
+          directories = [".env" "env" ".venv" "venv"];
+          activate_script = "default";
+        };
+      };
+
+      env = { TERM = "alacritty"; };
+      font_family = "FiraCode Nerd Font";
+      font_features = null;
+      font_size = null;
+      line_height = "comfortable";
+      option_as_meta = false;
+      button = false;
+      shell = "system";
+      toolbar = { title = true; };
+      working_directory = "current_project_directory";
+    };
+
+    # Language Server Protocol (LSP) Configuration
+    lsp = {
+      rust-analyzer = {
+        binary = {
+          path = lib.getExe pkgs.rust-analyzer;
+          path_lookup = true;
+        };
+      };
+
+      nix = {
+        binary.path_lookup = true;
+      };
+
+      elixir-ls = {
+        binary.path_lookup = true;
+        settings.dialyzerEnabled = true;
+      };
+    };
+
+    # Language-specific Settings
+    languages = {
+      "Elixir" = {
+        language_servers = ["!lexical" "elixir-ls" "!next-ls"];
+        format_on_save = {
+          external = {
+            command = "mix";
+            arguments = ["format" "--stdin-filename" "{buffer_path}" "-"];
+          };
+        };
+      };
+
+      "HEEX" = {
+        language_servers = ["!lexical" "elixir-ls" "!next-ls"];
+        format_on_save = {
+          external = {
+            command = "mix";
+            arguments = ["format" "--stdin-filename" "{buffer_path}" "-"];
+          };
+        };
+      };
+    };
+
+    # UI Configuration
+    theme = {
+      mode = "dark";
+      light = "One Light";
+      dark = "One Dark";
+    };
+
+    show_whitespaces = "all";
+    ui_font_size = 16;
+    buffer_font_size = 16;
+  };
   };
 }
