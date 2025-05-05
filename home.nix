@@ -41,7 +41,7 @@ in
       settings = {
         # Core Formatting
         add_newline = false;
-        format = "$username$hostname$nix_shell$vcs_indicator $git_branch$git_commit$git_state $git_status$directory$jobs $cmd_duration$character";
+        format = "$username$hostname$nix_shell$git_branch$git_commit$git_state$git_status$directory$jobs $cmd_duration$character";
 
         # Baduk Git Theme
         git_branch = {
@@ -105,41 +105,8 @@ in
           style = "bold purple";
         };
 
-        # dynamic vcs support
-        vcs_indicator = {
-                description = "Dynamic VCS state indicator (Git/JJ)";
-                command = ''
-                  if command -v git >/dev/null && git rev-parse --is-inside-work-tree 2>/dev/null | grep -q true; then
-                    # Git repo logic
-                    if git ls-files --unmerged | grep -q .; then
-                      echo "✖"  # Conflict
-                    elif ! git diff --quiet 2>/dev/null; then
-                      if git diff --cached --quiet 2>/dev/null; then
-                        echo "●"  # Unstaged
-                      else
-                        echo "○"  # Staged
-                      fi
-                    else
-                      echo "∿"   # Clean
-                    fi
-                  elif command -v jj >/dev/null && jj log -r @ 2>/dev/null | grep -q .; then
-                    # JJ repo logic
-                    if jj diff --stat @ 2>/dev/null | grep -q conflict; then
-                      echo "✖"  # Conflict
-                    elif jj diff --stat @ 2>/dev/null | grep -q changed; then
-                      echo "●"  # Changes
-                    else
-                      echo "∿"  # Clean
-                    fi
-                  else
-                    echo ""  # No VCS
-                  fi
-                '';
-                when = ''command -v git >/dev/null || command -v jj >/dev/null'';
-                format = ''[$output]($style)'';
-                style = "bold";
-                shell = ["bash" "fish" "zsh"];
-              };
+
+
       };
     };
 
