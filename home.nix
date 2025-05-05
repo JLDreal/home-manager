@@ -2,7 +2,7 @@
 let
   # ===== CONFIGURABLE MODEL SETTINGS =====
   rustModel = {
-    name = "starcoder2:3b";  # Options: "starcoder2:3b", "deepseek-coder:1.3b", "codellama:7b"
+    name = "codegemma:2b";  # Options: "starcoder2:3b", "deepseek-coder:1.3b", "codellama:7b"
     provider = "ollama";      # "ollama" or "huggingface"
   };
 in
@@ -30,7 +30,6 @@ in
     tuisky
     typst
     obsidian
-    ollama
     tt
     nix-init
   ];
@@ -94,69 +93,24 @@ in
     chmod 700 ${config.home.homeDirectory}/.ssh
   '';
 
-  # Ollama configuration
-  systemd.user.services.ollama = {
-    Unit = {
-      Description = "Ollama AI service";
-      After = "network.target";
-    };
-    Service = {
-      ExecStart = "${pkgs.ollama}/bin/ollama serve";
-      Restart = "on-failure";
-    };
-    Install = {
-      WantedBy = [ "default.target" ];
-    };
-  };
-
-  home.activation.ollamaPull = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    ${pkgs.ollama}/bin/ollama serve &
-    echo "Checking for Ollama model '${rustModel.name}'..."
-    if ! ${pkgs.ollama}/bin/ollama list | ${pkgs.gnugrep}/bin/grep -q '${rustModel.name}'; then
-      echo "Pulling '${rustModel.name}' model (this may take several minutes)..."
-      ${pkgs.ollama}/bin/ollama pull '${rustModel.name}'
-    else
-      echo "Model '${rustModel.name}' already exists"
-    fi
-  '';
-
   # ========== Zed Editor ==========
   programs.zed-editor = {
     enable = true;
     extensions = ["nix" "toml" "elixir" "make" "sql"];
 
     userSettings = {
-    # AI/Completion Parameters
-    parameters = {
-      max_tokens = 800;           # Reduced from 1000 for safety
-      temperature = 0.3;          # Lower for more deterministic code
-      top_p = 0.9;                # Better than temperature alone
-      frequency_penalty = 0.2;     # Discourages repetition
-      stop = ["\n\n" "'''" "```" "###"]; # Common stop sequences
 
-      # Response Template
-      template = ''
-        [INST]
-        Generate ONLY the requested code with standard comments.
-        Use this format:
+      assistant = {
+              enabled = true;
+              version = "2";
+              default_open_ai_model = null;
+              default_model = {
+                provider = rustModel.provider;
+                model = rustModel.name;
+              };
+            };
 
-        #[Comment]
-        [Code]
 
-        Prohibited:
-        - Explanations
-        - Examples
-        - Markdown formatting
-        [/INST]
-      '';
-    };
-
-    # Inline Suggestions (Ghost Text)
-    inline = {
-      enabled = false;            # Disable if you prefer panel-only
-      delay_ms = 500;
-      max_lines = 2;
-    };
 
     # Node.js Configuration
     node = {
