@@ -48,7 +48,7 @@
           ({ pkgs, inputs, unstablePkgs, ... }: {
             home.packages = with pkgs; [
               inputs.zen-browser.packages.${system}.default
-              ollama
+
             ];
 
             nixpkgs.config = {

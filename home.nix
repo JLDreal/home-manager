@@ -5,6 +5,7 @@ let
     name = "codegemma:2b";  # Options: "starcoder2:3b", "deepseek-coder:1.3b", "codellama:7b"
     provider = "ollama";      # "ollama" or "huggingface"
   };
+
 in
 {
   # ========== Basic Configuration ==========
@@ -32,7 +33,59 @@ in
     obsidian
     tt
     nix-init
+
+    ## filemanager dep
+    ranger
+        # Optional dependencies for better functionality
+        w3m # For image previews
+        ffmpegthumbnailer # For video thumbnails
+        poppler_utils # For PDF previews (pdftotext)
+        highlight # For syntax highlighting
+        atool # For archive previews
+        mediainfo # For media file info
   ];
+
+  # ========== Ranger filemanager ==========
+  # Create desktop entry
+  xdg.desktopEntries.ranger = {
+    name = "Ranger";
+    genericName = "File Manager";
+    comment = "Terminal-based file manager with VI key bindings";
+    exec = "${pkgs.kitty}/bin/kitty -e ranger %F";  # Changed %U to %F
+    terminal = false;  # Important change (explained below)
+    categories = [ "FileManager" "Utility" ];  # Simplified categories
+    mimeType = [ "inode/directory" ];  # Removed gnome-specific type
+    icon = "utilities-terminal";
+    startupNotify = false;  # Added for better behavior
+    noDisplay = false;  # Ensures it shows in menus
+  };
+  xdg.mimeApps = {
+      enable = true;
+      defaultApplications = {
+        "inode/directory" = [ "ranger.desktop" ];
+      };
+    };
+
+    # Set MIME associations manually
+    xdg.configFile."mimeapps.list".text = ''
+      [Default Applications]
+      inode/directory=ranger.desktop
+      application/x-gnome-saved-search=ranger.desktop
+    '';
+    home.activation.setRangerAsDefault = ''
+        ${pkgs.xdg-utils}/bin/xdg-mime default ranger.desktop inode/directory
+      '';
+
+    # Ranger configuration (same as before)
+    xdg.configFile."ranger/rc.conf".text = ''
+      set show_hidden true
+      set preview_images true
+      set preview_images_method w3m
+      set sort natural
+    '';
+
+    ## ranger for zed
+
 
   # ========== Starship Prompt ==========
 
@@ -153,7 +206,7 @@ in
     extensions = ["nix" "toml" "elixir" "make" "sql"];
 
     userSettings = {
-
+      fileManager = "ranger";
       assistant = {
               enabled = true;
               version = "2";
@@ -193,7 +246,7 @@ in
         };
       };
 
-      env = { TERM = "alacritty"; };
+      env = { TERM = "kitty"; };
       font_family = "FiraCode Nerd Font";
       font_features = null;
       font_size = null;
