@@ -1,12 +1,4 @@
 { config, pkgs, unstablePkgs, lib, ... }:
-let
-  # ===== CONFIGURABLE MODEL SETTINGS =====
-  rustModel = {
-    name = "codegemma:2b";  # Options: "starcoder2:3b", "deepseek-coder:1.3b", "codellama:7b"
-    provider = "ollama";      # "ollama" or "huggingface"
-  };
-
-in
 {
   # ========== Basic Configuration ==========
   home.username = "dev";
@@ -209,13 +201,9 @@ in
     userSettings = {
       fileManager = "ranger";
       assistant = {
-              enabled = true;
+              enabled = false;
               version = "2";
               default_open_ai_model = null;
-              default_model = {
-                provider = rustModel.provider;
-                model = rustModel.name;
-              };
             };
 
 
