@@ -30,7 +30,7 @@ jobs:
         echo "$HOME/.nix-profile/bin" >> $GITHUB_PATH
         source $HOME/.nix-profile/etc/profile.d/nix.sh
 
-    - name: Install dependencies
+    - name: Run home-manager
       run: make
 
     - name: Run check
