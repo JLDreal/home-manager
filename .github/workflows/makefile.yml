@@ -16,6 +16,7 @@ jobs:
     - name: Install Nix
       run: |
         sh <(curl -L https://nixos.org/nix/install) --no-daemon
+        mkdir $HOME/.config/nix
         echo "experimental-features = nix-command flakes" >> $HOME/.config/nix/nix.conf
         echo "$HOME/.nix-profile/bin" >> $GITHUB_PATH
         source $HOME/.nix-profile/etc/profile.d/nix.sh
