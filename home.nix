@@ -33,6 +33,7 @@ in
     obsidian
     tt
     nix-init
+    warp-terminal
 
     ## filemanager dep
     ranger
