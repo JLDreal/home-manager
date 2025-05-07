@@ -8,13 +8,26 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: configure
+    - name: Install Nix
+      run: |
+        sh <(curl -L https://nixos.org/nix/install) --no-daemon
+        echo "$HOME/.nix-profile/bin" >> $GITHUB_PATH
+        source $HOME/.nix-profile/etc/profile.d/nix.sh
+
+    - name: Install home-manager
+      run: |
+        nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
+        nix-channel --update
+        nix-shell '<home-manager>' -A install
+        echo "$HOME/.nix-profile/bin" >> $GITHUB_PATH
+        source $HOME/.nix-profile/etc/profile.d/nix.sh
+
+    - name: Configure
       run: ./configure
 
     - name: Install dependencies
