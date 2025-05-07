@@ -27,9 +27,6 @@ jobs:
         echo "$HOME/.nix-profile/bin" >> $GITHUB_PATH
         source $HOME/.nix-profile/etc/profile.d/nix.sh
 
-    - name: Configure
-      run: ./configure
-
     - name: Install dependencies
       run: make
 
