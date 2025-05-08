@@ -25,7 +25,7 @@
     obsidian
     tt
     nix-init
-    unstable.warp-terminal
+    unstablePkgs.warp-terminal
 
     ## filemanager dep
     ranger
