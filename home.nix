@@ -27,8 +27,6 @@
     nix-init
     unstablePkgs.warp-terminal
 
-    steam
-
 
     unstablePkgs.signal-desktop
     dconf
@@ -51,7 +49,7 @@
         };
       };
     };
- programs.steam.enable = true;
+
 
 
   # ========== Ranger filemanager ==========
