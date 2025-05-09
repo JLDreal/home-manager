@@ -26,7 +26,7 @@
     tt
     nix-init
     unstablePkgs.warp-terminal
-
+    unstablePkgs.steam
     unstablePkgs.signal-desktop
     dconf
     ## filemanager dep
