@@ -27,6 +27,8 @@
     nix-init
     unstablePkgs.warp-terminal
 
+    unstablePkgs.signal-desktop
+    dconf
     ## filemanager dep
     ranger
         # Optional dependencies for better functionality
@@ -37,6 +39,15 @@
         atool # For archive previews
         mediainfo # For media file info
   ];
+
+  dconf = {
+      enable = true;
+      settings = {
+        "org/gnome/desktop/interface" = {
+          color-scheme = "prefer-dark";
+        };
+      };
+    };
 
   # ========== Ranger filemanager ==========
   # Create desktop entry
@@ -196,7 +207,9 @@
   # ========== Zed Editor ==========
   programs.zed-editor = {
     enable = true;
-    extensions = ["nix" "toml" "elixir" "make" "sql"];
+    extensions = ["nix" "toml" "elixir" "make" "sql" "Dark Pop UI 🎨"];
+
+
 
     userSettings = {
       fileManager = "ranger";
@@ -293,7 +306,7 @@
     theme = {
       mode = "dark";
       light = "One Light";
-      dark = "One Dark";
+      dark = "Dark Pop UI";
     };
 
     show_whitespaces = "all";

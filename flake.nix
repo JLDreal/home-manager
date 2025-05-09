@@ -10,7 +10,7 @@
     };
 
     zen-browser = {
-      url = "github:MarceColl/zen-browser-flake";
+      url = "github:JLDreal/zen-browser-flake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
