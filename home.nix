@@ -26,7 +26,10 @@
     tt
     nix-init
     unstablePkgs.warp-terminal
-    unstablePkgs.steam
+
+    steam
+
+
     unstablePkgs.signal-desktop
     dconf
     ## filemanager dep
@@ -48,6 +51,8 @@
         };
       };
     };
+ programs.steam.enable = true;
+
 
   # ========== Ranger filemanager ==========
   # Create desktop entry
